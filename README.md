@@ -1,3 +1,4 @@
+⚖️ What It Does
 This project automates the watering of 7–8 terrace plants during peak summer heat using:
 
 * Soil moisture sensors
