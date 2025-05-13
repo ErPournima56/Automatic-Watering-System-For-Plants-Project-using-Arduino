@@ -1,10 +1,12 @@
-//#define SOILSENSEONE A0
-//#define SOILSENSETWO  A1
-//#define SOILSENSETH  A2
+#include <EEPROM.h>
+
 #define BUZZER  8
 #define LEDO    9
 #define LEDT    10
 #define SWITCHO  7
+//Soil Sensors added from A0 to A2
+
+int EEPROMadd ;
 
 void setup()
 {
@@ -29,10 +31,18 @@ void Soilsense()
           sensorValx = analogRead(sensorpins[x]) ;
           mappedValx = map(sensorValx, 0, 1023, 255, 0) ;
       
-           Serial.print("Sensor ");
+          Serial.print("Sensor ");
           Serial.print(x + 1);
           Serial.print(" reading: ");
           Serial.println(mappedValx) ;
+
+          if ( EEPROMadd < EEPROM.length() ) 
+          {
+            EEPROM.put( EEPROMadd, mappedValx ) ;
+            EEPROMadd++ ;
+          }
+          else
+            Serial.println("EEPROM address full") ;
           
           delay(3600) ;  
         }
@@ -50,9 +60,25 @@ void Buzzer()
  
 }  
 
+void ReadEEPROMData()
+{
+  int counter = 0, value = 0 ;
+  
+  Serial.println("Reading EEPROM values") ;
+  for( counter = 0; counter <= EEPROM.length() ; counter++ )
+  {
+    EEPROM.get(counter, value);
+    Serial.print("EEPROM [");
+    Serial.print(counter);
+    Serial.print("] = ");
+    Serial.println(EEPROM.read(counter));    
+  }
+}
+
 void loop() 
 {
   int buttonstate = 0 ;
+  String input ;
   
   buttonstate = digitalRead(SWITCHO) ;
 
@@ -64,4 +90,13 @@ void loop()
   }
   else
     digitalWrite(LEDT,HIGH) ;
+
+  if( Serial.available() > 0 )
+  {
+    input = Serial.readStringUntil("\n") ;
+    input.trim() ;  //ignores spaces or newlines
+
+    if( input.equalsIgnoreCase("readeeprom") )
+    ReadEEPROMData() ;
+ } 
 }
