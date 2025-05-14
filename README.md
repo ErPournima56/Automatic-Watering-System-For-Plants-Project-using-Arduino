@@ -41,7 +41,7 @@ A standalone Arduino-based system to monitor soil moisture and store sensor read
 | LED (Idle)        | Pin 10      |
 | Push Button       | Pin 7       |
  
-⚙️ How It Works
+##⚙️ How It Works
    - System starts with a manual switch.
    - Three soil sensors are activated one at a time for 30 seconds each.
    - If any sensor reading drops below 150, the drip irrigation pump turns on.
