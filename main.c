@@ -10,7 +10,7 @@
 #define SWITCHO  7
 
 
-SoftwareSerial GPS( 0,1 ) ; //0 - RXD, 1 - TXD  
+SoftwareSerial GPS( 4,5 ) ; //4 - RXD, 5 - TXD  
 TinyGPSPlus gps ;
 //Soil Sensors added from A0 to A2
 
