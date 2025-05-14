@@ -1,26 +1,37 @@
+#include <TinyGPS++.h>
+#include <TinyGPSPlus.h>
+#include <TinyGPS.h>   //for NEO - 6M GPS Module
 #include <EEPROM.h>
+#include <SoftwareSerial.h>   
 
 #define BUZZER  8
 #define LEDO    9
 #define LEDT    10
 #define SWITCHO  7
+
+
+SoftwareSerial GPS( 0,1 ) ; //0 - RXD, 1 - TXD  
+TinyGPSPlus gps ;
 //Soil Sensors added from A0 to A2
 
-int EEPROMadd ;
+int EEPROMadd, GPSdata, MappedValx ;
+const int Total = 7 ;
+byte Data[Total] ;
 
 void setup()
 {
   Serial.begin( 9600 ) ;
+  GPS.begin(9600) ;
   pinMode(BUZZER,OUTPUT) ;
   pinMode(LEDO,OUTPUT) ;
   pinMode(LEDT,OUTPUT) ;
   pinMode(SWITCHO,INPUT) ;
 }
 
-
+//*********************************************************************
 void Soilsense()
 {
-  unsigned int counter = 0, sensorValx = 0 , mappedValx = 0, x = 0;
+  unsigned int counter = 0, sensorValx = 0 ,x = 0;
   int sensorpins[3] = {A0, A1, A2} ;
   
   for(  x = 0; x < 3; x++ )
@@ -29,21 +40,14 @@ void Soilsense()
         {  
           digitalWrite(LEDO, HIGH) ;
           sensorValx = analogRead(sensorpins[x]) ;
-          mappedValx = map(sensorValx, 0, 1023, 255, 0) ;
+          MappedValx = map(sensorValx, 0, 1023, 255, 0) ;
       
           Serial.print("Sensor ");
           Serial.print(x + 1);
           Serial.print(" reading: ");
-          Serial.println(mappedValx) ;
-
-          if ( EEPROMadd < EEPROM.length() ) 
-          {
-            EEPROM.put( EEPROMadd, mappedValx ) ;
-            EEPROMadd++ ;
-          }
-          else
-            Serial.println("EEPROM address full") ;
+          Serial.println(MappedValx) ;
           
+          WriteEEPROMData() ;
           delay(3600) ;  
         }
         digitalWrite(LEDO,LOW) ;
@@ -52,6 +56,7 @@ void Soilsense()
     } 
 }
 
+//******************************************************************************
 void Buzzer()
 {
  digitalWrite(BUZZER,HIGH) ;
@@ -60,6 +65,54 @@ void Buzzer()
  
 }  
 
+//********************************************************************************
+void GPSInput()
+{
+  if( GPS.available() > 0 )
+  {
+    GPSdata = GPS.read() ;
+    
+    if( gps.date.isValid() )
+    {
+     Data[0] = gps.date.day() ;
+     Data[1] = gps.date.month() ;
+     Data[2] = gps.date.year() % 100;
+    }
+    if( gps.time.isValid() )
+    {
+     Data[3] = gps.time.hour();
+     Data[4] = gps.time.minute();
+     Data[5] = gps.time.second();
+    }
+  }
+}
+
+//*********************************************************************
+void WriteEEPROMData()
+{
+  int counter = 0 ;
+
+  Data[6] = MappedValx ;
+   if ( EEPROMadd + 10 < EEPROM.length() ) 
+    {
+      GPSInput() ;
+      for(counter = 0; counter < 7 ; counter++)
+      {
+       EEPROM.write( EEPROMadd++, Data[counter] ) ;
+      }
+      
+       GPSInput() ;
+      for(counter = 3; counter < 7 ; counter++)
+      {
+       EEPROM.write( EEPROMadd++, Data[counter] ) ;
+      }
+     
+    }
+    else
+    Serial.println("EEPROM address full") ;      
+}
+
+//******************************************************************
 void ReadEEPROMData()
 {
   int counter = 0, value = 0 ;
@@ -75,6 +128,7 @@ void ReadEEPROMData()
   }
 }
 
+//******************************************************************************************
 void loop() 
 {
   int buttonstate = 0 ;
